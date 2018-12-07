@@ -8,6 +8,7 @@ class Exporter:
 
     def ExportAsXML(path, cw, clues, author):
         root = ET.Element('puzzle')
+        root.set('type', 'crossword')
         #add author
         author_n = ET.SubElement(root, 'author')
         author_n.text = author

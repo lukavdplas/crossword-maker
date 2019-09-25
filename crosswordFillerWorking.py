@@ -1,6 +1,6 @@
 """
 
-This file contains the crosswordFiller for use.
+This file is intended to develop the crosswordFiller. Don't import!!
 
 The CrosswordFiller needs two things as input: an empty crossword (which
 specifies the locations of black fields) and a vocabulary.
@@ -33,6 +33,106 @@ be filled into a sequence.
 import random
 import copy
 import numpy as np
+import nltk
+
+#%%
+
+#-------------------------------------------------------------------------------
+# vocabulary import
+#-------------------------------------------------------------------------------
+
+#use the NLTK words corpus as a filler vocabulary
+
+nltkwords = nltk.corpus.words.words()
+unfilteredvocab = [w.lower() for w in nltkwords]
+
+vocab = []
+for w in unfilteredvocab:
+    if not '-' in w:
+        vocab.append(w)
+
+#%%
+
+#use the words from the example crossword as a filler vocabulary
+# crossword will only have one solution, but this is good for quick testing.
+
+vocab = ['moeras', 'bleken',
+         'sara', 'reep',
+         'kt', 'miljoen', 'cd',
+         'kat', 'atoom', 'tra',
+         'arts', 'ons', 'klit',
+         'tu', 'do',
+         'bereidvaardig',
+         'lt', 'sp',
+         'test', 'vos', 'step',
+         'oer', 'meute', 'kei',
+         'nl', 'uurwerk', 'lp',
+         'snit', 'neon',
+         'cruise', 'onecht',
+         'mokka', 'tonic',
+         'tarwemeel',
+         'es', 'tt', 'sr', 'su',
+         'ram', 'stelt', 'uni',
+         'aria', 'uit', 'muis',
+         'salto', 'verte',
+         'jonkvrouw',
+         'broos', 'steno',
+         'leem', 'das', 'eren',
+         'een', 'korps', 'koe',
+         'kp', 'tl', 'tk', 'nc',
+         'crimineel',
+         'nadat', 'pipet'
+        ]
+
+#%%
+
+#organise the vocab by length
+
+vocabdict = dict()
+for w in vocab:
+    l = len(w)
+    if l in vocabdict.keys():
+        vocabdict[l].add(w)
+    else:
+        vocabdict[l] = {w}
+
+
+#establish list of characters
+charindex = set()
+for w in vocab:
+    for c in w:
+        charindex.add(c)
+
+#%%
+
+#-------------------------------------------------------------------------------
+# empty crosword import
+#-------------------------------------------------------------------------------
+
+#An empty crosswrod is a matrix of boolean values. False fields are black fields.
+
+# as a filler, we will use our example crossword and take the setting from it.
+
+grid = ['moeras_bleken',
+        'o_sara_reep_a',
+        'kt_miljoen_cd',
+        'kat_atoom_tra',
+        'arts_ons_klit',
+        '_w_tu_k_do_m_',
+        'bereidvaardig',
+        '_m_lt_r_sp_n_',
+        'test_vos_step',
+        'oer_meute_kei',
+        'nl_uurwerk_lp',
+        'i_snit_neon_e',
+        'cruise_onecht']
+
+emptygrid = np.full((len(grid), len(grid[0])), True, dtype=bool)
+
+for i in range(len(grid)):
+    for j in range(len(grid[i])):
+        if grid[i][j] == '_':
+            emptygrid[j,i] = False
 
 #-------------------------------------------------------------------------------
 # sequence class
@@ -206,7 +306,6 @@ class Crossword:
         self.Empty = copy.deepcopy(cw.Empty)
         self.Width = cw.Width
         self.Height = cw.Height
-        self.vocabdict = cw.vocabdict
 
         #array that maps a coordinate in the crossword to which sequences overlap with it
         self.ref = np.array([[(None,None) for x in range(self.Height)] for y in range(self.Width)], tuple)
@@ -345,11 +444,21 @@ def update(queue, crossword):
         #if the queue is empty, then we're done
         return True
 
+iterations = 0
+progress = list()
 
 def FillIn(sequencelist, crossword):
     """Recursive function that fills in words in sequences"""
+    #update logs
+    global iterations
+    global progress
+    iterations += 1
+    #get the number of words yet to be excluded
+    left = 0
+    for seq in crossword.hor + crossword.ver:
+        left += len(seq.wordset) - 1
+    progress.append(left)
 
-    #try to update
     updated = update(sequencelist, crossword)
 
     if updated:
@@ -403,3 +512,37 @@ def FillIn(sequencelist, crossword):
     else:
         #if the update revealed a contradiction
         return None
+
+
+#%%
+
+#-------------------------------------------------------------------------------
+# test crossword
+#-------------------------------------------------------------------------------
+
+
+c =  Crossword(emptygrid)
+
+solved = FillIn(c.hor+c.ver, c)
+if solved:
+    print(solved)
+
+#%%
+
+#progress graph
+
+#import matplotlib.pyplot as plt
+
+#plt.plot(list(range(len(progress))), progress, '-')
+#plt.xlabel('iterations')
+#plt.ylabel('total wordset size')
+
+#%%
+
+#-------------------------------------------------------------------------------
+# test crossword
+#-------------------------------------------------------------------------------
+
+from exporter import Exporter
+
+Exporter.Export('test.xml', solved)

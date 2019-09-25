@@ -48,7 +48,7 @@ size = 13
 #-------------------------------------------------------------------------------
 
 #use the NLTK words corpus as a filler vocabulary
-
+"""
 nltkwords = nltk.corpus.words.words()
 unfilteredvocab = [w.lower() for w in nltkwords]
 
@@ -61,13 +61,15 @@ for w in unfilteredvocab:
         if t > 1000:
             break
 
+"""
 #%%
 
 #use the words from the example crossword as a filler vocabulary
 # crossword will only have one solution, but this is good for quick testing.
 
-"""
-vocab = ['moeras', 'bleken',
+vocab = ['asdfasdf', 'asdfghfdsa', 'ndjeusjaksjd', 'dhsgajwedfn']
+
+vocab = vocab + ['moeras', 'bleken',
          'sara', 'reep',
          'kt', 'miljoen', 'cd',
          'kat', 'atoom', 'tra',
@@ -94,7 +96,7 @@ vocab = ['moeras', 'bleken',
          'crimineel',
          'nadat', 'pipet'
         ]
-"""
+
 #%%
 
 #organise the vocab by length
@@ -112,45 +114,47 @@ for w in vocab:
 # generate lists of possible rows/columns
 #-------------------------------------------------------------------------------
 
-def partition(length):
-    minwordlength = 3
-    mincount = int((l + 1) / (3 + 1))
+def listOfWordsets(length, vocabdict):
+    """get a list of word sets for a row of given length. Includes sets for
+    padding between words (which is a set with one element)"""
 
-    partitions = []
+    minwordlength = 2
 
+    sets = []
 
-    for wordlength in range(minwordlength, length+ 1):
+    for wordlength in range(minwordlength, length  + 1):
         restlength = length - (wordlength)
 
         if restlength >= minwordlength + 1:
-            rest = partition(restlength - 1)
-            for result in rest:
-                partitions.append([wordlength] + result)
+            for p in range(1, min((4, restlength + 1 - minwordlength))):
+                rest = listOfWordsets(restlength - p, vocabdict)
+                for result in rest:
+                    sets.append([vocabdict[wordlength], {'_' * p}] + result)
         else:
             if restlength == 0:
-                partitions.append([wordlength])
+                sets.append([vocabdict[wordlength]])
+    return sets
 
-    return partitions
-
-def wordsetFromPartition(par, vocabdict):
-    #recursive function to get the wordset of a row (or part of one)
-
-    if len(par) == 1:
-        return vocabdict[par[0]] #words of this length
+def mergeWordsets(sets):
+    """recursive function to get a singular wordset for a row (or part of one)"""
+    if len(sets) == 1:
+        return sets[0] #words of this length
     else:
-        sequenceset = set()
-        restset = wordsetFromPartition(par[1:], vocabdict)
-        wordset = vocabdict[par[0]]
+        bigset = set()
+        restset = mergeWordsets(sets[1:])
+        wordset = sets[0]
         for r in restset:
             for w in wordset:
-                sequenceset.add(w + '_' + r)
-        return sequenceset
+                bigset.add(w + r)
+        return bigset
 
 vocabset = set()
-partitions = partition(size)
-for p in partitions:
-    for w in wordsetFromPartition(p, vocabdict):
+wordsets = listOfWordsets(size, vocabdict)
+for ws in wordsets:
+    for w in mergeWordsets(ws):
         vocabset.add(w)
+
+#%%
 
 #-------------------------------------------------------------------------------
 # sequence class
@@ -252,7 +256,7 @@ class Sequence:
 #-------------------------------------------------------------------------------
 
 class Crossword:
-    def __init__(self, size, vocab=None):
+    def __init__(self, size, vocabset):
         """Initialise from empty grid or from other crossword"""
         if type(size) == Crossword:
             self.InitFromCrossword(grid)
@@ -262,11 +266,7 @@ class Crossword:
             self.Height = size
 
             #create the list of possible rows/columns
-            self.vocab = vocab
-
-
-            #array that maps a coordinate in the crossword to which sequences overlap with it
-            self.ref = np.array([[(None,None) for x in range(self.Height)] for y in range(self.Width)], tuple)
+            self.vocab = vocabset
 
             #add horizontal sequences
             self.hor = []
@@ -286,77 +286,71 @@ class Crossword:
                 for y in range(0, self.Height):
                     cors.append((x, y))
                 #initiate sequence
-                self.hor.append(Sequence(cors, 'ver', self))
+                self.ver.append(Sequence(cors, 'ver', self))
 
-    def InitFromCrossword(self, cw):
+
+    def InitFromCrossword(self, cw, vocabset):
         """make a deep copy from another crossword"""
         self.Width = cw.Width
         self.Height = cw.Height
-
-        #array that maps a coordinate in the crossword to which sequences overlap with it
-        self.ref = np.array([[(None,None) for x in range(self.Height)] for y in range(self.Width)], tuple)
-
+        self.vocab = vocabset
 
         #add horizontal sequences
         self.hor = [seq.Copy(self) for seq in cw.hor]
-        #add sequences to map
-        for i in range(len(self.hor)):
-            s = self.hor[i]
-            for x, y in s.cors:
-                self.ref[x,y][0] = i
 
         #add vertical sequences
         self.ver = [seq.Copy(self) for seq in cw.ver]
-        #add sequences to map
-        for i in range(len(self.ver)):
-            s = self.ver[i]
-            for x, y in s.cors:
-                self.ref[x,y][1] = i
 
     def Seq(self, x, y, direction):
         """Get the sequence that intersects with given coordinates on given direction"""
         if direction == 'hor':
-            if self.ref[x, y][0] != None:
-                return self.hor[self.ref[x, y][0]]
-            return None
+            return self.hor[y]
         else:
-            if self.ref[x, y][1] != None:
-                return self.ver[self.ref[x, y][1]]
-            return None
+            return self.ver[x]
 
     def Intersect(self, seq, i):
         """Get the sequence that intersects with input sequence's ith field."""
         direction = seq.otherdirection
-        x,y = seq.cors[i]
-        return self.Seq(x, y, direction)
+
+        if direction == 'hor':
+            return self.hor[i]
+        else:
+            return self.ver[i]
 
     def UpdateSeq(self, seq):
         """Update the wordset of a single sequence"""
         if seq:
-            #loop through sequence's fields
+            #make a deep copy of the old options
+
             oldletters = [options for options in seq.letteroptions]
 
+
+            #remove letters that were excluded by the intersecting sequence
             for i in range(len(seq.cors)):
                 xcor, ycor = seq.cors[i]
+
                 #get intersecting sequence
                 otherseq = self.Intersect(seq, i)
 
-                if otherseq:
-                    #print('Checking position', i)
-                    to_delete = seq.Letters(xcor, ycor) - otherseq.Letters(xcor, ycor)
-                    #print('Excluding', to_delete)
-                    if len(to_delete) > 0:
-                        for letter in to_delete:
-                            seq.ExcludeLetter(i, letter)
+
+
+                to_delete = seq.letteroptions[i] - otherseq.Letters(xcor, ycor)
+
+                if len(to_delete) > 0:
+                    for letter in to_delete:
+                        seq.ExcludeLetter(i, letter)
+
 
             #check if any intersecting sequences would be affected by this
             affected = list()
 
             for i in range(len(seq)):
                 if seq.letteroptions[i] != oldletters[i]:
-                    otherseq = self.Intersect(seq, i)
-                    if otherseq:
-                        affected.append(otherseq)
+                    #otherseq = self.Intersect(seq, i)
+                    #xcor, ycor = seq.cors[i]
+                    #deleted = otherseq.Letters(xcor, ycor) - seq.letteroptions[i]
+                    #if deleted:
+                    affected.append(otherseq)
 
             #return list of newly affected sequences
             return affected
@@ -366,12 +360,12 @@ class Crossword:
     def NextSeq(self):
         """return coordinates of the next sequence to be filled in. Currently calculated as
         the sequence with the smallest remaining wordset."""
-        allsequences = self.hor + self.ver
-        candidates = set()
-        for seq in allsequences:
-            if len(seq.wordset) > 1:
-                candidates.add(seq)
 
+        #get all sequences with more than one option left
+        allsequences = self.hor + self.ver
+        candidates = set(seq for seq in allsequences if len(seq.wordset) > 1)
+
+        #get the one with the fewest number of words left
         sequence = min(candidates, key= lambda seq: len(seq.wordset))
         x, y = sequence.cors[0]
         direction = sequence.direction
@@ -408,8 +402,6 @@ def update(queue, crossword):
         #pop first sequence
         seq = queue[0]
         if seq:
-            x, y = seq.cors[0]
-            direction = seq.direction
 
             #update sequence's wordlist
             neighbours = crossword.UpdateSeq(seq)
@@ -445,57 +437,57 @@ def FillIn(sequencelist, crossword):
         left += len(seq.wordset) - 1
     progress.append(left)
 
+    print('updating...')
+
     updated = update(sequencelist, crossword)
 
     if updated:
         #check if the crossword is now completely filled in
-        complete = True
         for seq in crossword.hor + crossword.ver:
             if len(seq.wordset) > 1:
-                complete = False
+                print('complete!')
+                return crossword
 
-        if complete:
-            #if the crossword is now complete
-            return crossword
+        #if the crossword is not yet complete
 
+        #select the next sequence to change
+        new_x, new_y, new_dir = crossword.NextSeq()
+        sequence = crossword.Seq(new_x, new_y, new_dir)
+
+        #select the next word to try
+        wordchoice = random.choice(list(sequence.wordset))
+
+        print('trying', wordchoice, 'at', new_x, new_y, new_dir)
+
+        #create copy of the crossword
+        newcw = copy.deepcopy(Crossword(crossword))
+        newseq = newcw.Seq(new_x, new_y, new_dir)
+        neighbours = newseq.Choose(wordchoice)
+
+        #remove the word for other sequences to prevent duplicates
+        for s in newcw.hor+newcw.ver:
+            if s != newseq:
+                if wordchoice in s.wordset:
+                    s.ExcludeWord(wordchoice)
+                    for i in range(len(s)):
+                        neighbours.append(newcw.Intersect(s, i))
+
+        #check the resulting crossword
+        filled_in = FillIn(neighbours, newcw)
+
+        if filled_in:
+            #if we were able to complete the crossword
+            return filled_in
         else:
-            #if the crossword is not yet complete
-            #select the next sequence to change
-            new_x, new_y, new_dir = crossword.NextSeq()
-            sequence = crossword.Seq(new_x, new_y, new_dir)
+            #if we weren't, exclude this choice
+            print('excluding', wordchoice, 'at', new_x, new_y, new_dir)
+            neighbours = sequence.ExcludeWord(wordchoice)
 
-            wordsetsize = len(crossword.Seq(new_x, new_y, new_dir))
-
-            #select the next word to try
-            wordchoice = random.choice(list(sequence.wordset))
-
-            #create copy of the crossword
-            newcw = copy.deepcopy(Crossword(crossword))
-            newseq = newcw.Seq(new_x, new_y, new_dir)
-            neighbours = newseq.Choose(wordchoice)
-
-            #remove the word for other sequences to prevent duplicates
-            for s in newcw.hor+newcw.ver:
-                if len(s) == len(newseq) and s != newseq:
-                    if wordchoice in s.wordset:
-                        s.ExcludeWord(wordchoice)
-                        for i in range(len(s)):
-                            neighbours.append(newcw.Intersect(s, i))
-
-            #check the resulting crossword
-            filled_in = FillIn(neighbours, newcw)
-
-            if filled_in:
-                #if you were able to complete the crossword
-                return filled_in
-            else:
-                #if you weren't, exclude this choice
-                neighbours = sequence.ExcludeWord(wordchoice)
-
-                #solve the crossword with this choice excluded
-                return FillIn(neighbours, crossword)
+            #solve the crossword with this choice excluded
+            return FillIn(neighbours, crossword)
 
     else:
+        print('... contradiction reached!')
         #if the update revealed a contradiction
         return None
 
@@ -506,7 +498,8 @@ def FillIn(sequencelist, crossword):
 # test crossword
 #-------------------------------------------------------------------------------
 
-
+print()
+print()
 c =  Crossword(13, vocabset)
 
 solved = FillIn(c.hor+c.ver, c)
@@ -517,19 +510,8 @@ if solved:
 
 #progress graph
 
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
-#plt.plot(list(range(len(progress))), progress, '-')
-#plt.xlabel('iterations')
-#plt.ylabel('total wordset size')
-
-#%%
-
-#-------------------------------------------------------------------------------
-# test crossword
-#-------------------------------------------------------------------------------
-"""
-from exporter import Exporter
-
-Exporter.Export('test.xml', solved)
-"""
+plt.plot(list(range(len(progress))), progress, '-')
+plt.xlabel('iterations')
+plt.ylabel('total wordset size')

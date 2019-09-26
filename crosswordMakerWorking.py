@@ -188,6 +188,7 @@ class Sequence:
             self.otherdirection = 'hor'
 
         self.wordset = copy.copy(crossword.vocab)
+        self.exludedwords = set()
         self.UpdateLetters()
         self.cw = crossword
 
@@ -196,10 +197,10 @@ class Sequence:
         newlist = []
         for i in range(len(self)):
             newset = set(w[i] for w in self.wordset)
+            newset = set(w[i] for w in self.cw.vocab - self.excludedwords)
             newlist.append(newset)
 
         self.letteroptions = newlist
-
 
     def ExcludeLetter(self, i, letter):
         """Exclude a letter from a position and update the wordset."""
@@ -284,7 +285,6 @@ class Crossword:
             self.ver = []
             for x in range(self.Width):
                 self.ver.append(Sequence(x, 'ver', self))
-
 
     def InitFromCrossword(self, cw, vocabset):
         """make a deep copy from another crossword"""
@@ -487,8 +487,6 @@ def FillIn(sequencelist, crossword):
         #solve the crossword with this choice excluded
         return FillIn(neighbours, crossword)
 
-
-
 #%%
 
 #-------------------------------------------------------------------------------
@@ -497,11 +495,12 @@ def FillIn(sequencelist, crossword):
 
 print()
 print()
+
 c =  Crossword(13, vocabset)
 
-#solved = FillIn(c.hor+c.ver, c)
-#if solved:
-#    print(solved)
+solved = FillIn(c.hor+c.ver, c)
+if solved:
+    print(solved)
 
 #%%
 

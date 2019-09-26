@@ -188,32 +188,39 @@ class Sequence:
             self.otherdirection = 'hor'
 
         self.wordset = copy.copy(crossword.vocab)
-        self.exludedwords = set()
+        self.excludedwords = set()
+        self.word = None
         self.UpdateLetters()
         self.cw = crossword
 
     def UpdateLetters(self):
         """Update letter lists based on wordset."""
-        newlist = []
-        for i in range(len(self)):
-            newset = set(w[i] for w in self.wordset)
-            newset = set(w[i] for w in self.cw.vocab - self.excludedwords)
-            newlist.append(newset)
+        if self.word:
+            self.letteroptions = [{char} for char in self.word]
+        else:
+            newlist = []
+            for i in range(len(self)):
+                newset = set(w[i] for w in self.cw.vocabset - self.excludedwords)
+                newlist.append(newset)
 
-        self.letteroptions = newlist
+            self.letteroptions = newlist
 
     def ExcludeLetter(self, i, letter):
         """Exclude a letter from a position and update the wordset."""
-        newset = set()
-        for w in self.wordset:
-            if w[i] != letter:
-                newset.add(w)
-        self.wordset = newset
+        if self.word:
+            if self.word[i] = letter:
+                self.excludedwords.add(word)
+                self.word = None
+
+        for w in self.cw.vocabset:
+            if w[i] == letter:
+                self.excludedwords.add(w)
         self.UpdateLetters()
 
     def Choose(self, word):
         """Turn wordset into a single word. Return list of sequences that may be affected."""
-        self.wordset = {word}
+        self.word = word
+        self.excludedwords = self.cw.vocabset - {word}
 
         #get indices of changed fields
         fieldindices = []
@@ -233,7 +240,7 @@ class Sequence:
 
     def ExcludeWord(self, word):
         """Remove word from wordset and update letter options."""
-        self.wordset.remove(word)
+        self.excludedwords.add(word)
         oldletteroptions = copy.deepcopy(self.letteroptions)
         self.UpdateLetters()
         #this can be more efficient. You only need to see if one letter per position is still an option.
@@ -254,7 +261,8 @@ class Sequence:
         """Return a deep copy"""
         newseq = Sequence(self.index, self.direction, crossword)
 
-        newseq.wordset = copy.deepcopy(set([w for w in self.wordset]))
+        newseq.excludedwords = copy.deepcopy(set([w for w in self.excludedwords]))
+        newseq.word = self.word
 
         newseq.UpdateLetters()
         return newseq
@@ -348,14 +356,14 @@ class Crossword:
 
     def NextSeq(self):
         """return coordinates of the next sequence to be filled in. Currently calculated as
-        the sequence with the smallest remaining wordset."""
+        the sequence with the smallest remaining number of words, so the largest wordset."""
 
         #get all sequences with more than one option left
         allsequences = self.hor + self.ver
-        candidates = set(seq for seq in allsequences if len(seq.wordset) > 1)
+        candidates = set(seq for seq in allsequences if not seq.word)
 
         #get the one with the fewest number of words left
-        sequence = min(candidates, key= lambda seq: len(seq.wordset))
+        sequence = max(candidates, key= lambda seq: len(seq.excludedwords))
         index = sequence.index
         direction = sequence.direction
         return (index, direction)
@@ -403,8 +411,8 @@ def update(queue, crossword):
             neighbours = crossword.UpdateSeq(seq)
 
             #check if this led to a contradiction
-            wordsleft = len(seq.wordset)
-            if wordsleft > 0:
+            excluded = len(seq.excludedwords)
+            if excluded < len(crossword.vocab):
                 if neighbours:
                     newqueue = queue[1:] + neighbours
                 else:
@@ -430,7 +438,7 @@ def FillIn(sequencelist, crossword):
     #get the number of words yet to be excluded
     left = 0
     for seq in crossword.hor + crossword.ver:
-        left += len(seq.wordset) - 1
+        left += len(crossword.vocab) - len(seq.excludedwords)
     progress.append(left)
 
     print('updating...')
@@ -444,7 +452,7 @@ def FillIn(sequencelist, crossword):
 
     #if update succeeded
     #check if the crossword is now completely filled in
-    complete = all([len(seq.wordset) == 1 for seq in crossword.hor + crossword.ver])
+    complete = all([seq.word != None for seq in crossword.hor + crossword.ver])
     if complete:
         print('complete!')
         return crossword
@@ -456,7 +464,7 @@ def FillIn(sequencelist, crossword):
     sequence = crossword.Seq(new_i, new_dir)
 
     #select the next word to try
-    wordchoice = random.choice(list(sequence.wordset))
+    wordchoice = random.choice(list(crossword.vocab - sequence.excludedwords))
 
     print('trying', wordchoice, 'at', new_i, new_dir)
 

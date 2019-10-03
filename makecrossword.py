@@ -86,4 +86,4 @@ ver_clues = cluelist(solved.ver)
 
 from exporter import Exporter
 
-Exporter.Export('test.xml', solved)
+Exporter.Export('test.xml', solved,  (hor_clues, ver_clues), author='Luka')

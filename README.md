@@ -11,4 +11,4 @@ As an alternative to procedurally generating empty crosswords, I started on a pr
 
 The prototype is now working, and can export crosswords. There are still a few minor things I want to work out, like avoiding crossover between words and descriptions.
 
-As an alternative to the crosswordFiller and hard-coded templates, I have also started on a crosswordMaker, which is similar to the crosswordFiller but does not use an empty crossword as a basis. The adaptation mostly consists of simplifications to the code, which is nice. However, with even a limited vocabulary, it is almost impossible to run the crosswordMaker on my personal computer, so I'm abandoning the idea for now.
+As an alternative to the crosswordFiller and hard-coded templates, I have also started on a crosswordMaker, which is similar to the crosswordFiller but does not use an empty crossword as a basis. The adaptation mostly consists of simplifications to the code, which is nice. However, with even a limited vocabulary, it is almost impossible to run the crosswordMaker on my personal computer, since the combinations of words for an entire row increase exponentially, so I'm abandoning the idea for now.

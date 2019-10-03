@@ -34,6 +34,23 @@ class Exporter:
             row_n.text = ''.join(row)
 
         #add clues
+        if clues:
+            #clues is a tuple of two lists
+            hor_clues, ver_clues = clues
+
+            #add horizontal clues
+            hor_clues_n = ET.SubElement(root, 'clues')
+            hor_clues.set('direction', 'horizontal')
+            for clue in hor_clues:
+                clue_n = ET.SubElement(hor_clues_n, 'clue')
+                clue_n.text = clue
+
+            #add vertical clues
+            ver_clues_n = ET.SubElement(root, 'clues')
+            ver_clues.set('direction', 'vertical')
+            for clue in ver_clues:
+                clue_n = ET.SubElement(ver_clues_n, 'clue')
+                clue_n.text = clue
 
         #export
         tree = ET.ElementTree(element=root)

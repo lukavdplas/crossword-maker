@@ -97,12 +97,6 @@ for w in vocab:
         vocabdict[l] = {w}
 
 
-#establish list of characters
-charindex = set()
-for w in vocab:
-    for c in w:
-        charindex.add(c)
-
 #%%
 
 #-------------------------------------------------------------------------------

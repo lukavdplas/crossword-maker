@@ -2,9 +2,11 @@
 
 
 import numpy as np
+import random
 from importvocab import importVocab
 import crosswordFiller as cf
 
+#%%
 
 #-------------------------------------------------------------------------------
 # vocab import
@@ -17,10 +19,6 @@ vocablist = list(vocabwithclues.keys())    #we don't care about the clues for no
 
 #organise the vocab by length
 #vocab dict contains a set of words for every length w
-
-
-
-
 vocabdict = dict()
 for w in vocablist:
     l = len(w)
@@ -29,32 +27,31 @@ for w in vocablist:
     else:
         vocabdict[l] = {w}
 
+#%%
+
 #-------------------------------------------------------------------------------
 # empty crosword import
 #-------------------------------------------------------------------------------
 
-# as a filler, we will use our example crossword and take the setting from it.
+# for now, i use a small set of hardcoded templates.
 
-grid = ['moeras_bleken',
-        'o_sara_reep_a',
-        'kt_miljoen_cd',
-        'kat_atoom_tra',
-        'arts_ons_klit',
-        '_w_tu_k_do_m_',
-        'bereidvaardig',
-        '_m_lt_r_sp_n_',
-        'test_vos_step',
-        'oer_meute_kei',
-        'nl_uurwerk_lp',
-        'i_snit_neon_e',
-        'cruise_onecht']
+cws = [ [ [True, True, True, True, True, True, True, False, True, True, True, True, True],
+          [False, False, False, True, False, False, False, False, True, True, True, False, True],
+          [True, False, True, True, True, False, True, False, True, True, True, True, True],
+          [True, False, False, True, True, True, True, False, True, False, True, False, True],
+          [True, True, True, False, True, False, True, True, True, True, False, False, True],
+          [True, False, True, False, False, False, True, False, False, True, True, True, True],
+          [True, False, True, True, True, True, True, True, True, True, True, False, True],
+          [True, True, True, True, False, False, True, False, False, False, True, False, True],
+          [True, False, False, True, True, True, True, False, True, False, True, True, True],
+          [True, False, True, False, False, False, True, True, True, True, False, False, True],
+          [True, True, True, True, True, False, True, False, True, True, True, False, True],
+          [True, False, True, True, True, False, False, False, False, True, False, False, True],
+          [True, True, True, True, True, False, True, True, True, True, True, True, True] ] ]
 
-emptygrid = np.full((len(grid), len(grid[0])), True, dtype=bool)
+emptygrid = np.array(random.choice(cws))
 
-for i in range(len(grid)):
-    for j in range(len(grid[i])):
-        if grid[i][j] == '_':
-            emptygrid[j,i] = False
+#%%
 
 #-------------------------------------------------------------------------------
 # filling in the crossword
@@ -66,3 +63,27 @@ if solved:
     print(solved)
 else:
     print('oh no ):')
+
+#%%
+
+#-------------------------------------------------------------------------------
+# match it with clues
+#-------------------------------------------------------------------------------
+
+def cluelist(sequencelist):
+    """Returns a list of clues, in the order matching the original list."""
+    words = [list(seq.wordset)[0] for seq in sequencelist]
+    return [random.choice(vocabwithclues[word]) for word in words]
+
+hor_clues = cluelist(solved.hor)
+ver_clues = cluelist(solved.ver)
+
+#%%
+
+#-------------------------------------------------------------------------------
+# export
+#-------------------------------------------------------------------------------
+
+from exporter import Exporter
+
+Exporter.Export('test.xml', solved)

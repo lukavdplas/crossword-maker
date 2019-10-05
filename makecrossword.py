@@ -46,7 +46,7 @@ cws = [ [ [True, True, True, True, True, True, True, False, True, True, True, Tr
           [True, False, False, True, True, True, True, False, True, False, True, True, True],
           [True, False, True, False, False, False, True, True, True, True, False, False, True],
           [True, True, True, True, True, False, True, False, True, True, True, False, True],
-          [True, False, True, True, True, False, False, False, False, True, False, False, True],
+          [True, False, True, True, True, False, False, False, False, True, False, False, False],
           [True, True, True, True, True, False, True, True, True, True, True, True, True] ] ]
 
 emptygrid = np.array(random.choice(cws))
@@ -75,8 +75,22 @@ def cluelist(sequencelist):
     words = [list(seq.wordset)[0] for seq in sequencelist]
     return [random.choice(vocabwithclues[word]) for word in words]
 
+def sortedverticals(cw):
+    """Returns a list of all vertical sequences, but sorted by row instead of by
+    column."""
+    words = []
+    for y in range(cw.Height):
+        for x in range(cw.Width):
+            seq = cw.Seq(x,y,'ver')
+            if seq:
+                starting_x, starting_y = seq.cors[0]
+                if starting_y == y:
+                    words.append(seq)
+    return words
+
 hor_clues = cluelist(solved.hor)
-ver_clues = cluelist(solved.ver)
+sorted_ver = sortedverticals(solved)
+ver_clues = cluelist(sorted_ver)
 
 #%%
 

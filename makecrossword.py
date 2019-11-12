@@ -1,17 +1,21 @@
 #puts some stuff together to make a dutch crossword
 
+print('importing modules...')
 
-import numpy as np
 import random
+
 from importvocab import importVocab
 import emptycrosswords
 import crosswordFiller as cf
+from exporter import Exporter
 
 #%%
 
 #-------------------------------------------------------------------------------
 # vocab import
 #-------------------------------------------------------------------------------
+
+print('importing vocab...')
 
 #import vocab
 vocabpath = './vocab'
@@ -31,29 +35,31 @@ for w in vocablist:
 #%%
 
 #-------------------------------------------------------------------------------
-# empty crosword import
+# generate crossword
 #-------------------------------------------------------------------------------
 
-emptygrid = emptycrosswords.generateEmpty()
+def generate():
+    print('generating empty grid...')
+    emptygrid = emptycrosswords.generateEmpty()
 
-#%%
+    print('filling in crossword...')
+    c =  cf.Crossword(emptygrid, vocabdict)
+    solved = cf.FillIn(c.hor+c.ver, c)
 
-#-------------------------------------------------------------------------------
-# filling in the crossword
-#-------------------------------------------------------------------------------
+    return solved
 
-c =  cf.Crossword(emptygrid, vocabdict)
-solved = cf.FillIn(c.hor+c.ver, c)
-if solved:
-    print(solved)
-else:
-    print('oh no ):')
+solved = generate()
+
+while not solved:
+    solved = generate()
 
 #%%
 
 #-------------------------------------------------------------------------------
 # match it with clues
 #-------------------------------------------------------------------------------
+
+print('finding clues...')
 
 def cluelist(sequencelist):
     """Returns a list of clues, in the order matching the original list."""
@@ -83,6 +89,6 @@ ver_clues = cluelist(sorted_ver)
 # export
 #-------------------------------------------------------------------------------
 
-from exporter import Exporter
+print('exporting...')
 
 Exporter.Export('test.xml', solved,  (hor_clues, ver_clues), author='Luka')

@@ -13,10 +13,11 @@ import numpy as np
 import random
 import math
 
-#for viewing
-import PIL
-from PIL import Image, ImageDraw
-import matplotlib.pyplot as plt
+if __name__ == '__main__':
+    #for viewing
+    import PIL
+    from PIL import Image, ImageDraw
+    import matplotlib.pyplot as plt
 
 #%%
 #-------------------------------------------------------------------------------
@@ -242,57 +243,60 @@ def generateEmpty(plot = False):
 #-------------------------------------------------------------------------------
 
 # For development purposes. A function that displays the grid, and some graphs.
+# These are only executed in the main module
 
-def img(grid):
-    max_width = 500
-    square_size = int((max_width - 1) / size)
-    img_size = square_size * size + 1
+if __name__ == '__main__':
 
-    #create blank image
-    img = PIL.Image.new('1', (img_size, img_size), color=1)
+    def img(grid):
+        max_width = 500
+        square_size = int((max_width - 1) / size)
+        img_size = square_size * size + 1
 
-    #draw vertical grid lines
-    for i in range(size):
-        x = i * square_size
+        #create blank image
+        img = PIL.Image.new('1', (img_size, img_size), color=1)
+
+        #draw vertical grid lines
+        for i in range(size):
+            x = i * square_size
+            for y in range(img_size):
+                img.putpixel((x,y), 0)
+
+        #draw horizontal grid lines
+        for i in range(size):
+            y = i * square_size
+            for x in range(img_size):
+                img.putpixel((x,y), 0)
+
+        #final vertical and horizontal lines
         for y in range(img_size):
-            img.putpixel((x,y), 0)
-
-    #draw horizontal grid lines
-    for i in range(size):
-        y = i * square_size
+            img.putpixel((-1,y), 0)
         for x in range(img_size):
-            img.putpixel((x,y), 0)
+            img.putpixel((x,-1), 0)
 
-    #final vertical and horizontal lines
-    for y in range(img_size):
-        img.putpixel((-1,y), 0)
-    for x in range(img_size):
-        img.putpixel((x,-1), 0)
+        #fill in black squares
+        for i in range(size):
+            for j in range(size):
+                value = int(grid[j][i])   #1 for white squares, 0 for black squares
+                if value == 0:
+                    x_min, x_max = i * square_size, (i+1) * square_size
+                    y_min, y_max = j * square_size, (j+1) * square_size
 
-    #fill in black squares
-    for i in range(size):
-        for j in range(size):
-            value = int(grid[j][i])   #1 for white squares, 0 for black squares
-            if value == 0:
-                x_min, x_max = i * square_size, (i+1) * square_size
-                y_min, y_max = j * square_size, (j+1) * square_size
+                    for x in range(x_min, x_max):
+                        for y in range(y_min, y_max):
+                            img.putpixel((x,y), 0)
 
-                for x in range(x_min, x_max):
-                    for y in range(y_min, y_max):
-                        img.putpixel((x,y), 0)
+        return img
 
-    return img
+    def plotLoss(loss_log):
+        plt.plot(loss_log)
+        plt.xlabel('iterations')
+        plt.ylabel('loss')
 
-def plotLoss(loss_log):
-    plt.plot(loss_log)
-    plt.xlabel('iterations')
-    plt.ylabel('loss')
+    def plotLengths(grid):
+        lengths = [seqLength(x,y,grid, direction) for direction in ('hor', 'ver') for y,x in startingCors(grid, direction)]
+        labels = np.arange(min(lengths), max(lengths) + 1)
 
-def plotLengths(grid):
-    lengths = [seqLength(x,y,grid, direction) for direction in ('hor', 'ver') for y,x in startingCors(grid, direction)]
-    labels = np.arange(min(lengths), max(lengths) + 1)
-
-    plt.hist(lengths, bins=np.arange(min(lengths), max(lengths) + 2))
-    plt.xlabel('length')
-    plt.ylabel('count')
-    plt.xticks(labels + 0.5, labels = labels)
+        plt.hist(lengths, bins=np.arange(min(lengths), max(lengths) + 2))
+        plt.xlabel('length')
+        plt.ylabel('count')
+        plt.xticks(labels + 0.5, labels = labels)

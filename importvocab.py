@@ -17,8 +17,3 @@ def importVocab(path):
             vocab[lemma] = descriptions
 
     return vocab
-
-
-vocabpath = './vocab'
-vocab = importVocab(vocabpath)
-print(vocab)

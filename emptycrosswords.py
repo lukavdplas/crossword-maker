@@ -1,7 +1,13 @@
-# Attempt 2 at making an empty crossword generator. This version defines a number of constraints that need to be satisfied, and performs simulated annealing to find a good crossword in a random walk through all boolean grids.
-# the expression generateEmpty() generates a new grid that satisfies all constraints.
+# Attempt 2 at making an empty crossword generator. This version defines a
+#number of constraints that need to be satisfied, and performs simulated
+# annealing to find a good crossword in a random walk through all boolean grids.
 
+# Note: the expression generateEmpty() generates a new grid that satisfies all
+# constraints.
+
+#-------------------------------------------------------------------------------
 ### IMPORT
+#-------------------------------------------------------------------------------
 
 import numpy as np
 import random
@@ -13,8 +19,9 @@ from PIL import Image, ImageDraw
 import matplotlib.pyplot as plt
 
 #%%
-
+#-------------------------------------------------------------------------------
 ### INITIATE CROSSWORD
+#-------------------------------------------------------------------------------
 
 def makeGrid(size):
     grid = np.rint(np.random.rand(size, size)).astype(bool)
@@ -25,8 +32,10 @@ def makeGrid(size):
     return grid
 
 #%%
-
+#-------------------------------------------------------------------------------
 ### GRID READING FUNCTIONS
+#-------------------------------------------------------------------------------
+
 # Various functions that help in processing a crossword grid
 
 def isStart(x, y, grid, direction):
@@ -65,10 +74,13 @@ def seqLength(x,y,grid,direction):
     return(len(rest))
 
 #%%
-
+#-------------------------------------------------------------------------------
 ### CONSTRAINTS
+#-------------------------------------------------------------------------------
 
-# A number of functions that define constraints on empty crossword. Each function takes an empty crossword as input, and outputs the number of violations of the constraint.
+# A number of functions that define constraints on empty crossword. Each
+# function takes an empty crossword as input, and outputs the number of
+# violations of the constraint.
 
 def minLength(grid, min_length=3):
     'returns number of sequences that are shorter than the minimum length'
@@ -163,8 +175,9 @@ def loss(grid):
     return sum(f(grid) for f in constraints)
 
 #%%
-
+#-------------------------------------------------------------------------------
 ### PERFORM SEARCH
+#-------------------------------------------------------------------------------
 
 # Search for the best new crossword using simulated annealing.
 
@@ -224,8 +237,9 @@ def generateEmpty(plot = False):
     return grid
 
 #%%
-
+#-------------------------------------------------------------------------------
 ### SHOW GRID
+#-------------------------------------------------------------------------------
 
 # For development purposes. A function that displays the grid, and some graphs.
 

@@ -4,6 +4,7 @@
 import numpy as np
 import random
 from importvocab import importVocab
+import emptycrosswords
 import crosswordFiller as cf
 
 #%%
@@ -33,23 +34,7 @@ for w in vocablist:
 # empty crosword import
 #-------------------------------------------------------------------------------
 
-# for now, i use a small set of hardcoded templates.
-
-cws = [ [ [True, True, True, True, True, True, True, False, True, True, True, True, True],
-          [False, False, False, True, False, False, False, False, True, True, True, False, True],
-          [True, False, True, True, True, False, True, False, True, True, True, True, True],
-          [True, False, False, True, True, True, True, False, True, False, True, False, True],
-          [True, True, True, False, True, False, True, True, True, True, False, False, True],
-          [True, False, True, False, False, False, True, False, False, True, True, True, True],
-          [True, False, True, True, True, True, True, True, True, True, True, False, True],
-          [True, True, True, True, False, False, True, False, False, False, True, False, True],
-          [True, False, False, True, True, True, True, False, True, False, True, True, True],
-          [True, False, True, False, False, False, True, True, True, True, False, False, True],
-          [True, True, True, True, True, False, True, False, True, True, True, False, True],
-          [True, False, True, True, True, False, False, False, False, True, False, False, False],
-          [True, True, True, True, True, False, True, True, True, True, True, True, True] ] ]
-
-emptygrid = np.array(random.choice(cws))
+emptygrid = emptycrosswords.generateEmpty()
 
 #%%
 
